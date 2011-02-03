@@ -7,6 +7,7 @@ var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 var utils = require('./core/utils.js');
 var c = require('./core/cli.js');
+var flog = require('./core/fileLog.js');
 
 var dAmnJS = require('./core/dAmnJS.js').dAmnJS;
 
@@ -337,6 +338,7 @@ var Console = function ( ) {
 			msg = msg.replace( Bot.username, c.bg.grey + c.fg.white + Bot.username + c.bg.reset + c.fg.ltgrey );
 		}
 		c.msg( dAmn.deformChat( chat ), from, msg );
+		flog.msg( dAmn.deformChat( chat ), from, msg );
 	});
 
 	dAmn.events.on( 'recv.action', function (chat, from, msg) {
@@ -344,36 +346,47 @@ var Console = function ( ) {
 			msg = msg.replace( Bot.username, c.bg.grey + c.fg.white + Bot.username + c.bg.reset + c.fg.ltgrey );
 		}
 		c.action( dAmn.deformChat( chat ), from, msg );
+		flog.action( dAmn.deformChat( chat ), from, msg );
 	});
 	dAmn.events.on( 'recv.join', function (chat, from) {
 		c.join( dAmn.deformChat( chat ), from );
+		flog.join( dAmn.deformChat( chat ), from );
 	});
 	dAmn.events.on( 'recv.part', function (chat, from, reason) {
 		c.part( dAmn.deformChat( chat ), from, reason );
+		flog.part( dAmn.deformChat( chat ), from, reason );
 	});
 	dAmn.events.on( 'recv.kicked', function (chat, kickee, kicker, msg) {
 		c.kick( dAmn.deformChat( chat ), kickee, kicker, msg );
+		flog.kick( dAmn.deformChat( chat ), kickee, kicker, msg );
 	});
 	dAmn.events.on( 'recv.admin.remove', function (chat, p, by, name, num) {
 		c.admin_remove( dAmn.deformChat( chat ), by, name, num );
+		flog.admin_remove( dAmn.deformChat( chat ), by, name, num );
 	});
 	dAmn.events.on( 'recv.admin.move', function (chat, p, by, prev, name, num ) {
 		c.admin_move( dAmn.deformChat( chat ), by, prev, name, num );
+		flog.admin_move( dAmn.deformChat( chat ), by, prev, name, num );
 	});
 	dAmn.events.on( 'recv.privchg', function (chat, who, by, pc ) {
 		c.privchg( dAmn.deformChat( chat ), who, by, pc );
+		flog.privchg( dAmn.deformChat( chat ), who, by, pc );
 	});
 	dAmn.events.on( 'recv.admin.rename', function (chat, p, by, prev, name ) {
 		c.admin_rename( dAmn.deformChat( chat ), by, prev, name );
+		flog.admin_rename( dAmn.deformChat( chat ), by, prev, name );
 	});
 	dAmn.events.on( 'recv.admin.update', function (chat, p, by, name, privs) {
 		c.admin_update( dAmn.deformChat( chat ), p, by, name, privs );
+		flog.admin_update( dAmn.deformChat( chat ), p, by, name, privs );
 	});
 	dAmn.events.on( 'recv.admin.create', function (chat, p, by, name, privs) {
 		c.admin_create( dAmn.deformChat( chat ), by, name, privs );
+		flog.admin_create( dAmn.deformChat( chat ), by, name, privs );
 	});
 	dAmn.events.on( 'kicked', function (chat, kicker, msg) {
 		c.kicked( dAmn.deformChat( chat ), kicker, msg );
+		flog.kicked( dAmn.deformChat( chat ), kicker, msg );
 	});
 };
 
