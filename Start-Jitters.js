@@ -135,6 +135,7 @@ var configure = function ( ) {
 				configure();
 			} else {
 				c.log('Great!  The bot will start momentarily...\n\nIf you ever need to reconfigure the bot, run "start-bot.bat configure" to get back to this tool.');
+				if ( !path.existsSync( "config", true ) ) fs.mkdirSync('config', 0777);
 				fs.writeFileSync("./config/Global.json", JSON.stringify(config), "utf8");
 				setTimeout(function(){
 					Start(6);
