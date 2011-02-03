@@ -48,7 +48,6 @@ path.existsSync = function( dir, isDir ) {
 };
 
 path.exists("./config/Global.json", function(exists){
-//	var stringthing = process.argv[2].toLowerCase() || "";
 	fs.readFile( "./config/Global.json", "utf8", function( err, data ){
 		var stringthing = ( process.argv.length >= 3 ) ? process.argv[2].toLowerCase() : "";
 		if ( !exists || stringthing == "cfg" || stringthing == "config" || stringthing == "configure" || data == "" ) {

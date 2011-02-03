@@ -11,12 +11,11 @@ var c = require('./cli.js');
 exports.dAmnJS = function ( username, password, etc ) {
 	this.username = username || '';
 	this.password = password || '';
-//	this.authtoken = etc.authtoken || false;
+	this.authtoken = etc.authtoken || null;
 	this.version = 0.2;
 	this.server = {
 		chat: {
 			host: 'chat.deviantart.com',
-//			host: '127.0.0.1',
 			version: '0.3',
 			port: 3900
 		},
@@ -133,10 +132,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 		}).bind(this));
 		return this;
 	};
-	this.login = function ( auth ) {
-//		var auth = auth || this.authtoken;
-//		c.log( '[[@fg;dkred]]Logged in!' );
-//		c.log( '[[@fg;dkcyan]] # [[@fg;dkgreen]]Logging into the dAmnServer.' );
+	this.login = function ( ) {
 		c.info( 'Logging in to dAmnServer.' );
 		this.socket.write( 'login ' + this.username + '\npk=' + this.authtoken + "\n\0" );
 		this.events.once( 'login', ( function( e ) {
@@ -144,9 +140,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 				this.events.emit( 'loggedin' );
 			} else {
 				this.disconnect();
-//				this.socket.end( 'disconnect' );
-//				this.events.emit( 'authfail' );
-				c.error( 'authfail' );
+				this.events.emit( 'authfail' );
 			}
 		} ).bind( this ) );
 		return this;
@@ -303,50 +297,10 @@ exports.dAmnJS = function ( username, password, etc ) {
 		}
  		for( var packet in parts ) {
 			if ( parts[ packet ] !== '' ) {
-//				console.log( parts[ packet ] );
-//				var parsed = this.parsePacket( parts[ packet ] );
-//				this.events.emit( parsed.cmd, parsed );
 				var eventData = this.eventArgs( parts[ packet ] );
 				var p = eventData.params;
 				p.unshift( eventData.event );
-//				eventData.params.push( eventData.packet );
-//				console.log( eventData );
-//				console.log( eventData );
-//				this.events.on( 'error', function(){ c.error( arguments ); } );
-//				console.log( " === " + eventData.event + " === " );
-//				console.log( JSON.stringify( eventData.params ) );
-//				console.log(this.events.emit.toString());
-//				var p = eventData.params;
 				this.events.emit.apply( this.events, p );
-//				c.log( parts[ packet ] );
-//				this.events.on( 'whatismyscope', function(){ console.log( this ); } );
-//				this.events.emit( 'whatismyscope' );
-/* 				if ( parsed.sub.length > 0 ) {
-					for ( var i = 0; i < parsed.sub.length; i++ ) {
-						var sub = parsed.sub[i];
-						var e = parsed.cmd + '.' + sub.cmd;
-						switch ( sub.cmd ) {
-							case "msg":
-								this.events.emit( e, parsed.param, sub.args.from, this.parseTablumps(sub.body) );
-								break;
-							case "action":
-								this.events.emit( e, parsed.param, sub.args.from, this.parseTablumps(sub.body) );
-								break;
-							case "join":
-								this.events.emit( e, parsed.param, sub.param );
-								break;
-							case "part":
-								this.events.emit( e, parsed.param, sub.param, sub.args.r );
-								break;
-							case "kicked":
-								this.events.emit( e, parsed.param, sub.args.by, sub.param, sub.body || "" );
-								break;
-							default:
-								this.events.emit( e, sub ); // fallback for unknown packets
-						}
-					}
-				} */
-//				c.log(JSON.stringify(parsed));
 			}
 		}
 	};
@@ -532,11 +486,9 @@ exports.dAmnJS = function ( username, password, etc ) {
 		this.events.once( 'login', (function( e ){
 			if ( e == 'authentication failed' ) {
 				c.info( 'Stored authtoken refused, getting new authtoken...' );
-//				this.events.once( 'sys_authtoken', this.login.bind(this) );
 				this.events.once( 'sys_authtoken', this.connect.bind(this) );
 				this.events.once( 'sys_connected', this.login.bind(this) );
 				this.getCookie( this.username, this.password );
-//				this.events.emit( 'sys_authtoken', this.authtoken );
 			} else {
 				this.events.emit( 'sys_authtoken', this.authtoken );
 			}
