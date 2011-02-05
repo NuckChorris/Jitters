@@ -1,3 +1,5 @@
+var fs = require('fs');
+
 this.info.name = 'System';
 this.info.version = 1;
 this.info.about = 'System Functions for Jitters';
@@ -47,6 +49,9 @@ this.init = function(){
 	
 	var autorejoin = new Event( "kicked", "autorejoin" );
 	autorejoin.bind( this.e_autorejoin );
+
+	var linecount = new Command( "linecount", 99 );
+	linecount.bind( this.c_linecount );
 };
 this.c_join = function ( chat, from, msg, args ) {
 	this.dAmn.join( this.dAmn.formatChat( args[1] ) );
@@ -180,7 +185,7 @@ this.e_trigcheck = function ( chat, from, msg ) {
 };
 this.e_autorejoin = function ( chat, by, msg ) {
 //	c.log( JSON.stringify( arguments ) );
-	if ( msg.indexOf("autokicked") == -1 ) {
+	if ( msg !== undefined && msg.indexOf("autokicked") == -1 ) {
 		this.dAmn.join( chat );
 	}
 };
@@ -192,7 +197,7 @@ this.c_aj = function ( ns, from, msg, args, argsE ) {
 		case '+':
 		case 'new':
 			var room = this.dAmn.formatChat( args[2] ).toLowerCase();
-			if ( !room in orms ) {
+			if ( !( room in orms ) ) {
 				rooms.push( room );
 				config.save( 'autojoin', { 'rooms': rooms } );
 				this.dAmn.say( ns, from + ': <b>' + this.dAmn.deformChat( room ) + '</b> added to autojoin.' );
@@ -224,3 +229,66 @@ this.c_aj = function ( ns, from, msg, args, argsE ) {
 			break;
 	}
 };
+this.c_linecount = function ( ns, from, msg, args ) {
+	try {
+		var files = [];
+		switch ( args[1] ) {
+			case 'core':
+				args[1] = 'everything';
+				files.push( 'Bot.js', 'Start-Jitters.js', 'core/cli.js', 'core/dAmnJS.js', 'core/prompt.js', 'core/fileLog.js', 'core/utils.js' );
+				break;
+			case 'plugins':
+				files.push( String('modules\/\{\/\.\*\/\}') );
+				break;
+			case 'everything':
+			case '':
+				files.push( 'Bot.js', 'Start-Jitters.js', 'modules\/\{\/\.\*\\.js\/\}', 'core\/\{\/\.\*\\.js\/\}' );
+				break;
+			default:
+				files.push( args[1] );
+		}
+//		var lineCounts = {};
+		var total = 0;
+		var counts = [];
+		var fout = [];
+		for ( var i = 0, l = files.length; i < l; i++ ) {
+			if ( /\{\/.*\/\}/g.test( files[i] ) ) {
+				var re = /\{\/(.*)\/\}/g.exec( files[i] )[1];
+				var d = files[i].replace( /\{\/.*\/\}/g, '' );
+				var dir = fs.readdirSync( d );
+				matches = dir.filter((function(item){
+					return RegExp( re ).test( item );
+				}).bind(this));
+				for ( var ii = 0, ll = matches.length; ii < ll; ii++ ) {
+					matches[ii] = d + matches[ii];
+				}
+				fout.push.apply( fout, matches );
+//				files.splice.apply( files, [i, 1].concat(matches) );
+//				c.log( JSON.stringify( files ) );
+			} else {
+				fout.push( files[i] );
+			}
+		}
+		for ( var iii = 0, lll = fout.length; iii < lll; iii++ ) {
+/* 			fs.readFile( files[i], 'utf8', (function( err, data ) {
+				c.error( '[Line Counter] linecounts: ' + JSON.stringify( lineCounts ) );
+				var len = data.split( "\n" ).length;
+				lineCounts[ files[i] ] = len;
+				total += len;
+//				this.dAmn.say( ns, len );
+//				data = lines[i];
+			}).bind(this)); */
+			var data = fs.readFileSync( fout[iii], 'utf8' );
+//			c.error( '[Line Counter] linecounts: ' + JSON.stringify( lineCounts ) );
+			var len = data.split( "\n" ).length;
+//			lineCounts[ files[i] ] = len;
+			counts.push( fout[iii] + ' ' + len );
+			total += len;
+		}
+		var out = 'Total size of ' + ( args[1] || 'everything' ) + ': ' + total + ' lines<br /><sup>';
+		this.dAmn.say( ns, out + counts.join( ' &middot; ' ) + '</sup>' );
+	} catch (e) {
+		c.error( e );
+		this.dAmn.say( ns, 'lolfailed' );
+	}
+}
