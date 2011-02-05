@@ -8,6 +8,13 @@ var EventEmitter = require('events').EventEmitter;
 var utils = require('./utils.js');
 var c = require('./cli.js');
 
+function isArray(obj) {
+   if (obj.constructor.toString().indexOf("Array") == -1)
+      return false;
+   else
+      return true;
+}
+
 exports.dAmnJS = function ( username, password, etc ) {
 	this.username = username || '';
 	this.password = password || '';
@@ -147,27 +154,35 @@ exports.dAmnJS = function ( username, password, etc ) {
 	};
 	this.deformChat = function (chat, discard) {
 		if ( chat ) {
-			var discard = discard || this.username;
-			var parsed = /(chat|pchat|#|@)\:?(.*)/g.exec( chat );
-			var out = "";
-			switch( parsed[1] ) {
-				case 'chat':
-				case '#':
-					out = '#' + parsed[2];
-					break;
-				case 'pchat':
-					var pchatters = parsed[2].split( ':' ).sort();
-					if ( pchatters[1].toLowerCase() == discard.toLowerCase() ){
-						out = '@' + pchatters[2];
-					} else {
-						out = '@' + pchatters[1];
-					}
-					break;
-				case '@':
-					out = '@' + parsed[2];
-					break;
-				default:
-					out = chat;
+			if ( isArray( chat ) ) {
+				var out = [];
+				for ( var i = 0, l = chat.length; i < l; i++ ) {
+					out.push( arguments.callee( chat[i], discard ) );
+				}
+			} else {
+				var discard = discard || this.username;
+				var parsed = /(chat|pchat|#|@|)\:?(.*)/g.exec( chat );
+				var out = "";
+				switch( parsed[1] ) {
+					case 'chat':
+					case '#':
+					case '':
+						out = '#' + parsed[2];
+						break;
+					case 'pchat':
+						var pchatters = parsed[2].split( ':' ).sort();
+						if ( pchatters[1].toLowerCase() == discard.toLowerCase() ){
+							out = '@' + pchatters[2];
+						} else {
+							out = '@' + pchatters[1];
+						}
+						break;
+					case '@':
+						out = '@' + parsed[2];
+						break;
+					default:
+						out = chat;
+				}
 			}
 			return out;
 		} else {
@@ -176,23 +191,30 @@ exports.dAmnJS = function ( username, password, etc ) {
 	};
 	this.formatChat = function ( chat, me ) {
 		if ( chat ) {
-			var me = me || this.username;
-			var parsed = /(chat|pchat|#|@|)\:?(.*)/g.exec( chat );
-			var out = '';
-			switch( parsed[1] ) {
-				case 'pchat':
-					var pchatters = parsed[2].split( ':' ).sort();
-					out = 'pchat:' + pchatters[0] + ':' + pchatters[1];
-					break;
-				case '@':
-					var pchatters = [ parsed[2], me ].sort();
-					out = 'pchat:' + pchatters[0] + ':' + pchatters[1];
-					break;
-				case 'chat':
-				case '#':
-				default:
-					out = 'chat:' + parsed[2];
-					break;
+			if ( isArray( chat ) ) {
+				var out = [];
+				for ( var i = 0, l = chat.length; i < l; i++ ) {
+					out.push( arguments.callee( chat[i], me ) );
+				}
+			} else {
+				var me = me || this.username;
+				var parsed = /(chat|pchat|#|@|)\:?(.*)/g.exec( chat );
+				var out = '';
+				switch( parsed[1] ) {
+					case 'pchat':
+						var pchatters = parsed[2].split( ':' ).sort();
+						out = 'pchat:' + pchatters[0] + ':' + pchatters[1];
+						break;
+					case '@':
+						var pchatters = [ parsed[2], me ].sort();
+						out = 'pchat:' + pchatters[0] + ':' + pchatters[1];
+						break;
+					case 'chat':
+					case '#':
+					default:
+						out = 'chat:' + parsed[2];
+						break;
+				}
 			}
 			return out;
 		} else {

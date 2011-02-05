@@ -11,6 +11,13 @@ var flog = require('./core/fileLog.js');
 
 var dAmnJS = require('./core/dAmnJS.js').dAmnJS;
 
+function isArray(obj) {
+   if (obj.constructor.toString().indexOf("Array") == -1)
+      return false;
+   else
+      return true;
+}
+
 path.existsSync = function( dir, isDir ) {
 	try {
 		stats = fs.lstatSync( dir );
@@ -230,8 +237,7 @@ var Command = function ( name, priv ) {
 				for(var key in args){
 					argsE.push( msg.slice( Bot.trigger.length ).split(" ").slice(key).join(" ") );
 				}
-				console.log( '"' + args[1] + '"' );
-				if ( args[1] == '?' || args[1].toLowerCase() == 'help' ) {
+				if ( args[1] !== undefined && ( args[1] == '?' || args[1].toLowerCase() == 'help' ) ) {
 					dAmn.say( chat, this.help_msg.replace( '{from}', from ).replace( '{trig}', Bot.trigger ) );
 				} else {
 					// Command events recieve the following 5 arguments: chat, from, message, args, argsE
@@ -240,6 +246,7 @@ var Command = function ( name, priv ) {
 										'dAmn': dAmn,
 										'Bot': Bot,
 										'Command': Command,
+										'config': config,
 										'Event': Event,
 										'Modules': Modules,
 										'Users': Users,
@@ -250,7 +257,17 @@ var Command = function ( name, priv ) {
 				cmd_events.emit( 'nopriv', chat, from, this.name, this.priv, Users.getPriv( from ) );
 			}
 		}).bind(this);
-		cmd_events.on( 'c_' + this.name, fn );
+		if ( isArray( this.name ) == true ) {
+			for ( var i = 0, l = this.name.length; i < l; i++ ) {
+				cmd_events.on( 'c_' + this.name[i], fn );
+			}
+		} else {
+			try {
+				cmd_events.on( 'c_' + this.name, fn );
+			} catch ( e ) {
+				c.error( e );
+			}
+		}
 	};
 	this.help = function ( txt ) {
 		this.help_msg = txt;
@@ -277,6 +294,7 @@ var Event = function ( event, name, priv ) {
 									'dAmn': dAmn,
 									'Bot': Bot,
 									'Command': Command,
+									'config': config,
 									'Event': Event,
 									'Modules': Modules,
 									'Users': Users,
@@ -304,10 +322,12 @@ var Modules = {
 								'dAmn': dAmn,
 								'Bot': Bot,
 								'Command': Command,
+								'config': config,
 								'Event': Event,
 								'Modules': Modules,
 								'Users': Users,
-								'info': {}
+								'info': {},
+								'require': require,
 							};
 				var res = Script.runInNewContext( module, envir );
 				var headers = new Array();
@@ -413,8 +433,6 @@ var Jitters = function ( username, password, trigger, owner ) {
 	Users.settings.pcs[ Users.getPcByOrder( 100 ) ].users[ owner.toLowerCase() ] = this.owner;
 	Users.save();
 
-	c.clrScr();
-	
 	// Construct new dAmnJS object and log in
 	dAmn = new dAmnJS( this.username, this.password, {'trigger':this.trigger,'owner':this.owner,'authtoken':cfg.authtoken} );
 	
@@ -423,21 +441,22 @@ var Jitters = function ( username, password, trigger, owner ) {
 
 	// Bind startup events
 	dAmn.events.on( 'loggedin', function ( ) {
-		for ( var i = 0; i < cfg.rooms.length; i++ ) {
-			dAmn.join( cfg.rooms[i] );
+		var ajRooms = config.load('autojoin').rooms;
+		for ( var i = 0, l = ajRooms.length; i < l; i++ ) {
+			dAmn.join( ajRooms[i] );
 		}
-	} );
+	});
 	
 	// Load modules
-	dAmn.events.on( 'sys_authtoken', function ( auth ) {
+	dAmn.events.on( 'sys_authtoken', (function ( auth ) {
 		cfg.authtoken = auth;
 		config.save('Global', cfg);
 		Modules.load();
-	} );
+	}).bind(this) );
 	
 	// Bind nopriv
 	cmd_events.on( 'nopriv', function ( chat, from, cmd, need, have ) {
-		dAmn.say( chat, from+': Sorry, but you are not priveleged for that command.' );
+		dAmn.say( chat, from + ': Sorry, but you are not privileged for that command.' );
 	} );
 
 	// Command parser event hook.

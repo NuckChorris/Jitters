@@ -25,9 +25,13 @@ this.init = function(){
 	restart.bind( this.c_restart );
 	restart.help( 'Makes the bot restart.' );
 	
-	var eval = new Command( "eval", 100 );
+	var eval = new Command( [ "e", "eval" ], 100 );
 	eval.bind( this.c_eval );
 	eval.help( 'Evaluates a piece of JavaScript.' );
+	
+	var aj = new Command( [ "aj", "autojoin" ], 99 );
+	aj.bind( this.c_aj );
+	aj.help( 'Manage the rooms that are joined when the bot starts up.' );
 	
 	var about = new Command( "about", 25 );
 	about.bind( this.c_about );
@@ -81,9 +85,9 @@ this.c_about = function(chat, from, msg, args){
 			case 'system':
 				var about = '/npmsg '+from+': Running Node.JS '+process.version+' on '+process.platform+'.';
 				break;
-//				case 'uptime':
-//					var about = '<abbr title="'+from+'"></abbr>Uptime: '+time_length( getTime() - Bot.start )+'.';
-//					break;
+//			case 'uptime':
+//				var about = '<abbr title="'+from+'"></abbr>Uptime: '+time_length( getTime() - Bot.start )+'.';
+//				break;
 			case 'about':
 			case '':
 			default:
@@ -111,7 +115,7 @@ this.c_about = function(chat, from, msg, args){
 };
 this.c_credits = function ( ns, from, msg ) {
 	say  = '<b>Special Thanks</b><br/>';
-	say += 'You should thank all these people. Without them, Jitters would probably not exist.<br/>';
+	say += 'You should thank all these people. Without them, Jitters would probably not exist.<br/><sub>';
 	say += ' &bull; :devphotofroggy: - Made dAmnPHP, which I studied extensively during development.<br/>';
 	say += ' &bull; :devincluye: - Helped ensure that Jitters worked on Mac (and provided a binary of Node.JS), and lit a fire under my ass by releasing his Ruby bot, Participle.<br/>';
 	say += ' &bull; :devjadenxtrinityx: - Checked that my bot could work on other computers than my own, and constantly asked me if I was done yet.<br/>';
@@ -153,12 +157,14 @@ this.c_commands = function ( ns, from, msg ) {
 				linelen += cmds.length;
 				output += "<b>" + key + ": </b>";
 				for ( var n = 0; n < cmds.length; n++ ) {
+					if ( cmds[n].name.constructor.toString().indexOf("Array") !== -1 ) cmds[n].name = cmds[n].name.join( ' / ' );
 					output += '<abbr title="' + cmds[n].priv + '">' + cmds[n].name + '</abbr>' + ( ( n < cmds.length-1 ) ? ' &middot; ' : '' );
 				}
 			} else {
 				linelen = cmds.length;
 				output += '<br /><b>' + key + ': </b>';
 				for ( var n = 0; n < cmds.length; n++ ) {
+					if ( cmds[n].name.constructor.toString().indexOf("Array") !== -1 ) cmds[n].name = cmds[n].name.join( ' / ' );
 					output += '<abbr title="' + cmds[n].priv + '">' + cmds[n].name + '</abbr>' + ( ( n < cmds.length-1 ) ? ' &middot; ' : '' );
 				}
 			}
@@ -176,5 +182,45 @@ this.e_autorejoin = function ( chat, by, msg ) {
 //	c.log( JSON.stringify( arguments ) );
 	if ( msg.indexOf("autokicked") == -1 ) {
 		this.dAmn.join( chat );
+	}
+};
+this.c_aj = function ( ns, from, msg, args, argsE ) {
+	var rooms = config.load('autojoin').rooms;
+	var orms = (function(){ var o = {}; for( var i = 0, l = rooms.length; i < l; i++ ) o[ rooms[i] ] = ''; return o })();
+	switch ( args[1].toLowerCase() ) {
+		case 'add':
+		case '+':
+		case 'new':
+			var room = this.dAmn.formatChat( args[2] ).toLowerCase();
+			if ( !room in orms ) {
+				rooms.push( room );
+				config.save( 'autojoin', { 'rooms': rooms } );
+				this.dAmn.say( ns, from + ': <b>' + this.dAmn.deformChat( room ) + '</b> added to autojoin.' );
+			} else {
+				this.dAmn.say( ns, from + ': <b>' + this.dAmn.deformChat( room ) + '</b> already in autojoin.' );
+			}
+			break;
+		case '-':
+		case 'rem':
+		case 'remove':
+		case 'del':
+		case 'delete':
+			var room = this.dAmn.formatChat( args[2] ).toLowerCase();
+			if ( room in orms ) {
+				for( var i = 0, l = rooms.length; i < l; i++ ) { 
+					if( rooms[i] == room ) rooms.splice(i,1); 
+				}
+				config.save( 'autojoin', { 'rooms': rooms } );
+				this.dAmn.say( ns, from + ': <b>' + this.dAmn.deformChat( room ) + '</b> removed from autojoin.' );
+			} else {
+				this.dAmn.say( ns, from + ': <b>' + this.dAmn.deformChat( room ) + '</b> not in autojoin.' );
+			}
+			break;
+		case 'list':
+		case 'show':
+		case 'rooms':
+		default:
+			this.dAmn.say( ns, 'Autojoin rooms: ' + this.dAmn.deformChat( rooms ).join( ', ' ) );
+			break;
 	}
 };

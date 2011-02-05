@@ -7,8 +7,8 @@ var util   = require('util');
 var Prompt = require('./core/prompt.js');
 var c = require('./core/cli.js');
 require("./core/utils.js");
-c.clr();
 
+c.clr();
 var Jitters;
 var config = {};
 var w = process.binding('stdio').getColumns();
@@ -98,7 +98,7 @@ var configure = function ( ) {
 			var formatChat = function ( chat, me ) {
 				me = config.user || me;
 				if ( chat ) {
-					var parsed = /(chat|pchat|#|@)\:?(.*)/g.exec( chat );
+					var parsed = /(chat|pchat|#|@)?\:?(.*)/g.exec( chat );
 					var out = '';
 					switch( parsed[1] ) {
 						case 'chat':
@@ -113,6 +113,8 @@ var configure = function ( ) {
 							var pchatters = [ parsed[2], me ].sort();
 							out = 'pchat:' + pchatters[0] + ':' + pchatters[1];
 							break;
+						default:
+							out = 'chat:' + parsed[2];
 					}
 					return out;
 				} else {
@@ -136,6 +138,8 @@ var configure = function ( ) {
 			} else {
 				c.log('Great!  The bot will start momentarily...\n\nIf you ever need to reconfigure the bot, run "start-bot.bat configure" to get back to this tool.');
 				if ( !path.existsSync( "config", true ) ) fs.mkdirSync('config', 0777);
+				fs.writeFileSync("./config/autojoin.json", JSON.stringify( { 'rooms': config.rooms } ), "utf8");
+				delete config.rooms;
 				fs.writeFileSync("./config/Global.json", JSON.stringify(config), "utf8");
 				setTimeout(function(){
 					Start(6);
@@ -146,17 +150,18 @@ var configure = function ( ) {
 
 function Start(code){
 	if (code == 5){
-		console.log('Jitters restarting by user request...');
+		c.clr();
+		c.info('Jitters restarting by user request...');
 	} else if (code == 6) {
-		console.log('Jitters is starting up...');
+		c.clr();
+		c.info('Jitters is starting up...');
 	} else if (code == 7) {
-		console.log('Jitters has quit by user request...');
+		c.info('Jitters has quit by user request...');
 	} else {
-		console.log('Jitters has crashed!');
+		c.info('Jitters has crashed!');
 	}
 	if (code == 5 || code == 6){
-		c.clr();
-		Jitters = spawn( process.execPath, ['Bot.js']);
+		Jitters = spawn( process.execPath, ['Bot.js'] );
 		Jitters.stdout.on('data', function (data) {
 			util.print(data);
 		});
