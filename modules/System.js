@@ -11,6 +11,10 @@ this.init = function(){
 	join.bind( this.c_join );
 	join.help( 'Makes the bot join a room.' );
 	
+	var chat = new Command( "chat", 75 );
+	chat.bind( this.c_chat );
+	chat.help( 'Makes the bot enter into pchat.' );
+	
 	var part = new Command( "part", 75 );
 	part.bind( this.c_part );
 	part.help( 'Makes the bot part a room.' );
@@ -55,6 +59,10 @@ this.init = function(){
 };
 this.c_join = function ( chat, from, msg, args ) {
 	this.dAmn.join( this.dAmn.formatChat( args[1] ) );
+};
+this.c_chat = function ( chat, from, msg, args ) {
+	this.dAmn.join( this.dAmn.formatChat( '@' + args[1] ) );
+	this.dAmn.say( chat, 'Joining pchat with :dev' + args[1] + ':.' );
 };
 this.c_part = function ( chat, from, msg, args ) {
 	this.dAmn.part( this.dAmn.formatChat( args[1] ) );
