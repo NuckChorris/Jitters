@@ -240,6 +240,7 @@ this.c_aj = function ( ns, from, msg, args, argsE ) {
 this.c_linecount = function ( ns, from, msg, args ) {
 	try {
 		var files = [];
+		args[1] = args[1] || '';
 		switch ( args[1] ) {
 			case 'core':
 				args[1] = 'everything';
