@@ -1,4 +1,5 @@
 var sys = require("sys");
+var tty = require("tty");
 module.exports = {
 	reset: '\x1B[0m',
 	fx: {
@@ -50,10 +51,18 @@ module.exports = {
 		return '\033['+x+';'+y+'H';
 	},
 	width: function() {
-		return Number( process.binding('stdio').getColumns() );
+		if ( process.version == '0.3.1' ) {
+			return Number( process.binding('stdio').getColumns() );
+		} else {
+			return Number( tty.getColumns() );
+		}
 	},
 	height: function() {
-		return Number( process.binding('stdio').getRows() );
+		if ( process.version == '0.3.1' ) {
+			return Number( process.binding('stdio').getRows() );
+		} else {
+			return Number( tty.getRows() );
+		}
 	},
 	move: function(x,y) {
 		sys.print('\033['+x+';'+y+'H');

@@ -9,40 +9,28 @@ function Prompt(question, cb) {
     var vars = {};
     var queue = [];
 
-
     self.ask = function (question, into) {
         queue.push({ task : 'ask', q: question, into: into });
         return self;
     }
-
     self.discreet = function (question, into) {
         queue.push({ task : 'discreet', q: question, into: into });
         return self;
     }
-
     self.tap = function (f) {
         queue.push({ task : 'tap', f : f });
         return self;
     }
-
-    //Getting rid of "end" would mean making processQueue() starting automatically,
-    //given a queue length of 1 or something. Totally doable, but this change isn't a priority.
-    //One suggestion, by James, is to setTimeout on the first method.
     self.end = function () {
         processQueue();
     }
-
     function processQueue () { 
         task = queue.shift();
         if (task === undefined) return;
         if (task.task == 'ask' || task.task == 'discreet') {
             prompt(task.q, function (resp) {
-                 if (typeof task.into === 'string') {
-                     vars[task.into] = resp;
-                 }
-                 else if (typeof task.into === 'function') {
-                     task.into(resp);
-                 }
+                 if (typeof task.into === 'string') vars[task.into] = resp;
+				 else if (typeof task.into === 'function') task.into(resp);
                  processQueue();
             }, task.task == 'ask' ? false : true);
         }
@@ -56,7 +44,6 @@ function Prompt(question, cb) {
         var p = process.openStdin();
         console.log(question);
         if (quiet) {
-            //Basically stolen from isaacs/s npm/utils/prompt.js
             stdio.setRawMode('true');
             var line = "";
             p.on('data', function(ch) {

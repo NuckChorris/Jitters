@@ -289,7 +289,11 @@ this.c_linecount = function ( ns, from, msg, args ) {
 			}).bind(this)); */
 			var data = fs.readFileSync( fout[iii], 'utf8' );
 //			c.error( '[Line Counter] linecounts: ' + JSON.stringify( lineCounts ) );
-			var len = data.split( "\n" ).length;
+			var lines = data.replace( /\/\*.*\*\//g, '' ).split( "\n" );
+			var len = lines.filter(function(item){
+				return !( /^\s*$/.test( item ) && /^\s*\/\/.*$/.test( item ) );
+			}).length;
+//			var len = data.split( "\n" ).length;
 //			lineCounts[ files[i] ] = len;
 			counts.push( fout[iii] + ' ' + len );
 			total += len;

@@ -1,19 +1,6 @@
 var path = require("path");
 var fs   = require("fs");
-
-path.existsSync = function( dir, isDir ) {
-	try {
-		stats = fs.lstatSync( dir );
-		if ( isDir == true ) {
-			return stats.isDirectory();
-		} else {
-			return stats.isFile();
-		}
-	}
-	catch (e) {
-		return false;
-	}
-};
+path.existsSync = require("./existsSync.js");
 
 module.exports = {
 	months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],

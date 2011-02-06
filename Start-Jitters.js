@@ -1,17 +1,16 @@
-var Script = process.binding('evals').Script;
 var fs = require('fs');
 var path = require("path");
-var EventEmitter = require('events').EventEmitter;
+var util = require("util");
 var spawn = require('child_process').spawn;
-var util   = require('util');
 var Prompt = require('./core/prompt.js');
+var tty = require('tty');
 var c = require('./core/cli.js');
 require("./core/utils.js");
 
 c.clr();
 var Jitters;
 var config = {};
-var w = process.binding('stdio').getColumns();
+var w = c.width();
 var bar = {
 	render: function(val, max){
 		c.move(1,0);
@@ -163,10 +162,10 @@ function Start(code){
 	if (code == 5 || code == 6){
 		Jitters = spawn( process.execPath, ['Bot.js'] );
 		Jitters.stdout.on('data', function (data) {
-			util.print(data);
+			util.print( data );
 		});
 		Jitters.stderr.on('data', function (data) {
-			util.print("ERROR! "+data);
+			c.error( data );
 		});
 		Jitters.on('exit', Start);
 	}
