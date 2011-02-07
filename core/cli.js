@@ -156,7 +156,7 @@ module.exports = {
 		sys.print(this.fg.dkcyan+" # "+this.fg.dkgreen+this.parse(str)+"\x1B[0m\r\n");
 	},
 	parse: function(str) {
-		str = str.replace( "[[@reset]]", this.reset );
+		str = str.toString().replace( "[[@reset]]", this.reset );
 		for (var kFg in this.fg){
 			str = str.replace( "[[@fg;"+kFg+"]]", this.fg[kFg] );
 		}
