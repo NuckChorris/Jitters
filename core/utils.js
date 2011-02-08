@@ -1,32 +1,3 @@
-exports.unserialize = function ( str ) {
-	this.parseItem = function ( item ) {
-		var splat = item.split(":");
-		switch ( splat[0] ) {
-			case 's':
-				return splat[2].slice( 1, Number( splat[1] ) + 1 );
-			case 'i':
-			case 'd':
-				return Number( splat[1] );
-			case 'b':
-				return ( splat[1] == 1 );
-			case 'N':
-				return null;
-			default:
-				return splat;
-		}
-	}
-	this.splut = str.slice(str.indexOf("{")+1,str.lastIndexOf("}")-1).split(";");
-	this.lastKey = "";
-	this.out = {};
-	for(var i = 0; i < this.splut.length; i++){
-		if ( i % 2 == 0 ) {
-			this.lastKey = this.parseItem( this.splut[i] );
-		} else {
-			this.out[this.lastKey] = this.parseItem( this.splut[i] );
-		}
-	}
-	return this.out;
-}
 function toArray(enum) {
     return Array.prototype.slice.call(enum);
 }
