@@ -113,7 +113,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 			request.on('response', (function( response ) {
 				this.cookie = unescape( response.headers["set-cookie"] );
 				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
-					this.authtoken = this.cookie.slice( 29, 61 );
+					this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
 				} else {
 					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
 				}
@@ -130,7 +130,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 			var request = require('https').request( options, (function( response ) {
 				this.cookie = unescape( response.headers["set-cookie"] );
 				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
-					this.authtoken = this.cookie.slice( 29, 61 );
+					this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
 				} else {
 					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
 				}
