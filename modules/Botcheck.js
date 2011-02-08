@@ -7,13 +7,25 @@ this.info.author = 'nuckchorris0';
 this.init = function(){
 	var botcheck = new Event( "recv.msg", "botcheck", 25 );
 	botcheck.bind( this.e_botcheck );
+	
+	var bdsBotcheck = new BDS( "BDS", "BOTCHECK", "DIRECT" );
+	bdsBotcheck.bind( this.e_bdsBotcheck );
+
+	var bdsBotcheckAll = new BDS( "BDS", "BOTCHECK", "ALL" );
+	bdsBotcheckAll.bind( this.e_bdsBotcheck );
 };
 
 this.e_botcheck = function ( chat, from, msg ) {
 	if ( msg.slice( 0, Bot.username.length + 10 ) == Bot.username + ": botcheck" || msg.indexOf( '<abbr title="' + Bot.username + ': botcheck"><\/abbr>' ) > -1 && chat.toLowerCase() == "chat:botdom" ) {
 		this.dAmn.say( chat, '<abbr title="away"><\/abbr>Heeeeeelllz yeah! <abbr title="botresponse: ' + from + ' ' + Bot.owner + ' ' + Bot.info.name + ' ' + Bot.info.version + '\/0.2 ' + md5( trim( Bot.trigger ).toLowerCase() + from.toLowerCase() + Bot.username.toLowerCase() ) + ' ' + Bot.trigger + '"><\/abbr>' );
 	}
-}
+};
+
+this.e_bdsBotcheck = function ( from, payload, command ) {
+	if ( payload == Bot.username || command == 'ALL' ) {
+		this.dAmn.npmsg( 'chat:DataShare', 'BDS:BOTCHECK:RESPONSE:' + from + ',' + Bot.owner + ',' + Bot.info.name + ',' + Bot.info.version + '\/0.2,' + md5( trim( Bot.trigger ).toLowerCase() + from.toLowerCase() + Bot.username.toLowerCase() ) + ',' + Bot.trigger, true );
+	}
+};
 
 /**
 *

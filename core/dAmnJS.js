@@ -93,21 +93,20 @@ exports.dAmnJS = function ( username, password, etc ) {
 		},
 	];
 	this.getCookie = function ( username, password ) {
+		postdata  = 'ref=' + encodeURI( this.server.login.transport + this.server.login.host + this.server.login.file );
+		postdata += '&username=' + encodeURI( username );
+		postdata += '&password=' + encodeURI( password );
+		postdata += '&reusetoken=1';
+		
+		var headers = ({});
+		headers['Host'] = this.server.login.host;
+		headers['User-Agent'] = this.agent;
+		headers['Accept'] = "text/html";
+		headers['Cookie'] = "skipintro=1";
+		headers['Content-Type'] = "application/x-www-form-urlencoded";
+		headers['Content-Length'] = postdata.length;
 		if ( process.version == 'v0.3.1' ) {
 			var login = http.createClient( this.server.login.port, this.server.login.host, true );
-			postdata  = 'ref=' + encodeURI( this.server.login.transport + this.server.login.host + this.server.login.file );
-			postdata += '&username=' + encodeURI( username );
-			postdata += '&password=' + encodeURI( password );
-			postdata += '&reusetoken=1';
-			
-			var headers = ({});
-			headers['Host'] = this.server.login.host;
-			headers['User-Agent'] = this.agent;
-			headers['Accept'] = "text/html";
-			headers['Cookie'] = "skipintro=1";
-			headers['Content-Type'] = "application/x-www-form-urlencoded";
-			headers['Content-Length'] = postdata.length;
-
 			var request = login.request('POST', this.server.login.file, headers);
 			request.write(postdata);
 			request.end();
@@ -118,19 +117,6 @@ exports.dAmnJS = function ( username, password, etc ) {
 				c.info( 'Got Authtoken!' );
 			}).bind(this));
 		} else {
-			postdata  = 'ref=' + encodeURI( this.server.login.transport + this.server.login.host + this.server.login.file );
-			postdata += '&username=' + encodeURI( username );
-			postdata += '&password=' + encodeURI( password );
-			postdata += '&reusetoken=1';
-			
-			var headers = ({});
-			headers['Host']				= this.server.login.host;
-			headers['User-Agent']		= this.agent;
-			headers['Accept']			= "text/html";
-			headers['Cookie']			= "skipintro=1";
-			headers['Content-Type']		= "application/x-www-form-urlencoded";
-			headers['Content-Length']	= postdata.length;
-			
 			var options = ({});
 			options.port	= this.server.login.port;
 			options.host	= this.server.login.host;
@@ -166,6 +152,15 @@ exports.dAmnJS = function ( username, password, etc ) {
 		this.socket.on( 'connect', onconnect.bind(this) );
 		this.socket.on( 'error', (function( ){
 			c.error('Could not open connection with ' + this.server.chat.host + '.');
+		}).bind(this));
+		this.socket.on( 'timeout', (function( ){
+			c.error('Socket timed out.');
+		}).bind(this));
+		this.socket.on( 'end', (function( ){
+			c.error('Server sent FIN packet.');
+		}).bind(this));
+		this.socket.on( 'close', (function( had_error ){
+			c.error( 'Socket Closed' + (had_error) ? ' (error)' : '.' );
 		}).bind(this));
 		return this;
 	};

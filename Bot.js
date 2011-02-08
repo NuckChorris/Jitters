@@ -218,6 +218,30 @@ var Users = {
 	},
 };
 
+
+var bds_events = new EventEmitter();
+var BDS = function ( namespace, category, command ) {
+	this.namespace = namespace;
+	this.category = category;
+	this.command = command;
+	this.bind = function ( func ) {
+		this.func = func;
+		fn = (function( from, namespace, category, command, payload ) {
+			this.func.call( {	'c': c,
+								'process': process,
+								'dAmn': dAmn,
+								'Bot': Bot,
+								'Command': Command,
+								'config': config,
+								'Event': Event,
+								'Modules': Modules,
+								'Users': Users,
+							}, from, payload, command, category, namespace );
+		}).bind(this);
+		bds_events.on( this.namespace + '.' + this.category + '.' + this.command, fn );
+	};
+};
+
 var Command = function ( name, priv ) {
 	this.module = Command.caller.arguments[0];
 	this.name = name;
@@ -322,6 +346,7 @@ var Modules = {
 								'dAmn': dAmn,
 								'Bot': Bot,
 								'Command': Command,
+								'BDS': BDS,
 								'config': config,
 								'Event': Event,
 								'Modules': Modules,
@@ -354,6 +379,7 @@ var Console = function ( ) {
 	if ( !path.existsSync( "logs", true ) ) fs.mkdirSync('logs', 0777);
 
 	dAmn.events.on( 'recv.msg', function (chat, from, msg) {
+		if ( chat == 'chat:DataShare' ) return;
 		if ( msg.indexOf( Bot.username ) !== -1 ) {
 			msg = msg.replace( Bot.username, c.bg.grey + c.fg.white + Bot.username + c.bg.reset + c.fg.ltgrey );
 		}
@@ -362,6 +388,7 @@ var Console = function ( ) {
 	});
 
 	dAmn.events.on( 'recv.action', function (chat, from, msg) {
+		if ( chat == 'chat:DataShare' ) return;
 		if ( msg.indexOf( Bot.username ) !== -1 ) {
 			msg = msg.replace( Bot.username, c.bg.grey + c.fg.white + Bot.username + c.bg.reset + c.fg.ltgrey );
 		}
@@ -369,42 +396,52 @@ var Console = function ( ) {
 		flog.action( dAmn.deformChat( chat ), from, msg );
 	});
 	dAmn.events.on( 'recv.join', function (chat, from) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.join( dAmn.deformChat( chat ), from );
 		flog.join( dAmn.deformChat( chat ), from );
 	});
 	dAmn.events.on( 'recv.part', function (chat, from, reason) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.part( dAmn.deformChat( chat ), from, reason );
 		flog.part( dAmn.deformChat( chat ), from, reason );
 	});
 	dAmn.events.on( 'recv.kicked', function (chat, kickee, kicker, msg) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.kick( dAmn.deformChat( chat ), kickee, kicker, msg );
 		flog.kick( dAmn.deformChat( chat ), kickee, kicker, msg );
 	});
 	dAmn.events.on( 'recv.admin.remove', function (chat, p, by, name, num) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.admin_remove( dAmn.deformChat( chat ), by, name, num );
 		flog.admin_remove( dAmn.deformChat( chat ), by, name, num );
 	});
 	dAmn.events.on( 'recv.admin.move', function (chat, p, by, prev, name, num ) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.admin_move( dAmn.deformChat( chat ), by, prev, name, num );
 		flog.admin_move( dAmn.deformChat( chat ), by, prev, name, num );
 	});
 	dAmn.events.on( 'recv.privchg', function (chat, who, by, pc ) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.privchg( dAmn.deformChat( chat ), who, by, pc );
 		flog.privchg( dAmn.deformChat( chat ), who, by, pc );
 	});
 	dAmn.events.on( 'recv.admin.rename', function (chat, p, by, prev, name ) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.admin_rename( dAmn.deformChat( chat ), by, prev, name );
 		flog.admin_rename( dAmn.deformChat( chat ), by, prev, name );
 	});
 	dAmn.events.on( 'recv.admin.update', function (chat, p, by, name, privs) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.admin_update( dAmn.deformChat( chat ), p, by, name, privs );
 		flog.admin_update( dAmn.deformChat( chat ), p, by, name, privs );
 	});
 	dAmn.events.on( 'recv.admin.create', function (chat, p, by, name, privs) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.admin_create( dAmn.deformChat( chat ), by, name, privs );
 		flog.admin_create( dAmn.deformChat( chat ), by, name, privs );
 	});
 	dAmn.events.on( 'kicked', function (chat, kicker, msg) {
+		if ( chat == 'chat:DataShare' ) return;
 		c.kicked( dAmn.deformChat( chat ), kicker, msg );
 		flog.kicked( dAmn.deformChat( chat ), kicker, msg );
 	});
@@ -445,6 +482,7 @@ var Jitters = function ( username, password, trigger, owner ) {
 		for ( var i = 0, l = ajRooms.length; i < l; i++ ) {
 			dAmn.join( ajRooms[i] );
 		}
+		dAmn.join( 'chat:DataShare' );
 	});
 	
 	// Load modules
@@ -467,6 +505,21 @@ var Jitters = function ( username, password, trigger, owner ) {
 		}
 	};
 	dAmn.events.on( 'recv.msg', this.cmdParser.bind(this) );
+	
+	this.bdsParser = function( chat, from, msg ) {
+		if ( chat == 'chat:DataShare' ) {
+			var args = msg.split(":");
+			var namespace = args[0];
+			var category  = args[1];
+			var command   = args[2];
+			var payload   = args[3] || '';
+			bds_events.emit( 'bds', from, namespace, category, command, payload );
+			bds_events.emit( namespace, from, namespace, category, command, payload );
+			bds_events.emit( namespace + '.' + category, from, namespace, category, command, payload );
+			bds_events.emit( namespace + '.' + category + '.' + command, from, namespace, category, command, payload );
+		}
+	};
+	dAmn.events.on( 'recv.msg', this.bdsParser.bind(this));
 };
 
 var cfg = config.load('Global');

@@ -1,4 +1,5 @@
 var sys = require("sys");
+
 if ( process.version !== 'v0.3.1' ) {
 	var tty = require("tty");
 }
@@ -56,14 +57,23 @@ module.exports = {
 		if ( process.version == 'v0.3.1' ) {
 			return Number( process.binding('stdio').getColumns() );
  		} else {
-			return Number( tty.getWindowSize(1)[1] );
+			return Number( tty.getWindowSize(1)[0] );
 		}
+	},
+	scrollback: {
+		_scrollback: [],
+		get: function(  ) {
+			
+		},
+		add: function( ) {
+		
+		},
 	},
 	height: function() {
 		if ( process.version == 'v0.3.1' ) {
 			return Number( process.binding('stdio').getRows() );
  		} else {
-			return Number( tty.getWindowSize(1)[0] );
+			return Number( tty.getWindowSize(1)[1] );
 		}
 	},
 	move: function(x,y) {
@@ -98,11 +108,13 @@ module.exports = {
 	},
 	ts: function() {
 		d = new Date();
-		h = d.getHours() + 1;
+		o = d.getTimezoneOffset();
+//		this.log( o );
+		h = d.getUTCHours() + ( o / 60 );
 		hh = ( h < 10 ) ? "0" + h : h;
-		m = d.getMinutes() + 1;
+		m = d.getUTCMinutes();
 		mm = ( m < 10 ) ? "0" + m : m;
-		s = d.getSeconds() + 1;
+		s = d.getUTCSeconds();
 		ss = ( s < 10 ) ? "0" + s : s;
 		return hh + ":" + mm + ":" + ss;
 	},

@@ -39,6 +39,9 @@ this.init = function(){
 	aj.bind( this.c_aj );
 	aj.help( 'Manage the rooms that are joined when the bot starts up.' );
 	
+	var ping = new Command( "ping", 50 );
+	ping.bind( this.c_ping );
+	
 	var about = new Command( "about", 25 );
 	about.bind( this.c_about );
 	
@@ -98,8 +101,11 @@ this.c_about = function(chat, from, msg, args){
 			case 'system':
 				var about = '/npmsg '+from+': Running Node.JS '+process.version+' on '+process.platform+'.';
 				break;
+/**
+* Note to self: Finish this shit.
+*/
 //			case 'uptime':
-//				var about = '<abbr title="'+from+'"></abbr>Uptime: '+time_length( getTime() - Bot.start )+'.';
+//				var about = '<abbr title="' + from + '"></abbr>Uptime: ' + time_length( getTime() - Bot.start )+'.';
 //				break;
 			case 'about':
 			case '':
@@ -126,6 +132,16 @@ this.c_about = function(chat, from, msg, args){
 	}
 	this.dAmn.say( chat, about );
 };
+this.c_ping = function ( ns, from, msg ) {
+	this.dAmn.say( ns, 'Ping? <abbr title="' + +new Date() + '"></abbr>' );
+	this.dAmn.events.on( 'recv.msg', (function( chat, from, msg ) {
+		if ( /Ping\? <abbr title="(\d+)"><\/abbr>/g.test(msg) ) {
+			var t = /Ping\? <abbr title="(\d+)"><\/abbr>/g.exec(msg)[1];
+			this.dAmn.say( chat, 'Pong! ' + ( Number( new Date() ) - Number( t ) ) + 'ms' );
+			this.dAmn.events.removeListener( 'recv.msg', arguments.callee );
+		}
+	}).bind(this));
+};
 this.c_credits = function ( ns, from, msg ) {
 	say  = '<b>Special Thanks</b><br/>';
 	say += 'You should thank all these people. Without them, Jitters would probably not exist.<br/><sub>';
@@ -133,6 +149,7 @@ this.c_credits = function ( ns, from, msg ) {
 	say += ' &bull; :devincluye: - Helped ensure that Jitters worked on Mac (and provided a binary of Node.JS), and lit a fire under my ass by releasing his Ruby bot, Participle.<br/>';
 	say += ' &bull; :devjadenxtrinityx: - Checked that my bot could work on other computers than my own, and constantly asked me if I was done yet.<br/>';
 	say += ' &bull; :devphilo23: - Created dAmnAIR library (which I use the packet parser from).<br/>';
+	say += ' &bull; :devDeathShadow--666: - Because he asked.<br/>';
 	say += '</sub>';
 	this.dAmn.say( ns, say );
 };
