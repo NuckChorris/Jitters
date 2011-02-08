@@ -111,7 +111,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 			request.write(postdata);
 			request.end();
 			request.on('response', (function( response ) {
-				this.cookie = decodeURI( response.headers["set-cookie"] );
+				this.cookie = unescape( response.headers["set-cookie"] );
 				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
 					this.authtoken = this.cookie.slice( 29, 61 );
 				} else {
@@ -128,7 +128,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 			options.headers	= headers;
 		
 			var request = require('https').request( options, (function( response ) {
-				this.cookie = decodeURI( response.headers["set-cookie"] );
+				this.cookie = unescape( response.headers["set-cookie"] );
 				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
 					this.authtoken = this.cookie.slice( 29, 61 );
 				} else {
