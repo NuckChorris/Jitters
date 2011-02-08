@@ -112,7 +112,11 @@ exports.dAmnJS = function ( username, password, etc ) {
 			request.end();
 			request.on('response', (function( response ) {
 				this.cookie = decodeURI( response.headers["set-cookie"] );
-				this.authtoken = utils.unserialize( unescape( this.cookie.slice( 9, this.cookie.indexOf(";") ) ) ).authtoken;
+				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
+					this.authtoken = this.cookie.slice( 29, 61 );
+				} else {
+					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
+				}
 				this.events.emit( 'sys_authtoken', this.authtoken );
 				c.info( 'Got Authtoken!' );
 			}).bind(this));
@@ -125,7 +129,11 @@ exports.dAmnJS = function ( username, password, etc ) {
 		
 			var request = require('https').request( options, (function( response ) {
 				this.cookie = decodeURI( response.headers["set-cookie"] );
-				this.authtoken = utils.unserialize( unescape( this.cookie.slice( 9, this.cookie.indexOf(";") ) ) ).authtoken;
+				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
+					this.authtoken = this.cookie.slice( 29, 61 );
+				} else {
+					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
+				}
 				this.events.emit( 'sys_authtoken', this.authtoken );
 				c.info( 'Got Authtoken!' );
 			}).bind(this) );
