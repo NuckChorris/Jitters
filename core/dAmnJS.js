@@ -105,41 +105,22 @@ exports.dAmnJS = function ( username, password, etc ) {
 		headers['Cookie'] = "skipintro=1";
 		headers['Content-Type'] = "application/x-www-form-urlencoded";
 		headers['Content-Length'] = postdata.length;
-		if ( process.version == 'v0.3.1' ) {
-			var login = http.createClient( this.server.login.port, this.server.login.host, true );
-			var request = login.request('POST', this.server.login.file, headers);
-			request.write(postdata);
-			request.end();
-			request.on('response', (function( response ) {
-				this.cookie = unescape( response.headers["set-cookie"] );
-				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
-					this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
-				} else {
-					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
-				}
-				this.events.emit( 'sys_authtoken', this.authtoken );
-				c.info( 'Got Authtoken!' );
-			}).bind(this));
-		} else {
-			var options = ({});
-			options.port	= this.server.login.port;
-			options.host	= this.server.login.host;
-			options.method	= 'POST';
-			options.headers	= headers;
-		
-			var request = require('https').request( options, (function( response ) {
-				this.cookie = unescape( response.headers["set-cookie"] );
-				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
-					this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
-				} else {
-					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
-				}
-				this.events.emit( 'sys_authtoken', this.authtoken );
-				c.info( 'Got Authtoken!' );
-			}).bind(this) );
-			request.write(postdata);
-			request.end();
-		}
+		var callback = function( response ) {
+			this.cookie = unescape( response.headers["set-cookie"] );
+			if ( this.cookie.indexOf( 'auth=__' ) == 0 ) {
+				this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
+			} else {
+				this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie.replace( 'auth_secure', '' ).split( 'auth' )[1] )[1];
+				c.error(  );
+			}
+			this.events.emit( 'sys_authtoken', this.authtoken );
+			c.info( 'Got Authtoken!' );
+		};
+		var login = http.createClient( this.server.login.port, this.server.login.host, true );
+		var request = login.request('POST', this.server.login.file, headers);
+		request.write(postdata);
+		request.end();
+		request.on('response', callback.bind(this));
 		return this;
 	};
 	this.connect = function ( ) {
