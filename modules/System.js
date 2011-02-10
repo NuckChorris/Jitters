@@ -86,8 +86,13 @@ this.c_restart = function ( chat, from, msg, args ) {
 	process.exit(5);
 };
 this.c_eval = function ( chat, from, msg, args, argsE ) {
+	var ns = chan = chat;
 	if (from.toLowerCase() == Bot.owner.toLowerCase()){
-		eval(argsE[1]);
+		try {
+			eval( argsE[1] );
+		} catch (e) {
+			this.dAmn.say( chat, '<b>[ERROR]</b> <code>' + e + '</code>' );
+		}
 	}
 };
 this.c_about = function(chat, from, msg, args){

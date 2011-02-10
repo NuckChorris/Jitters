@@ -1,6 +1,3 @@
-function toArray(enum) {
-    return Array.prototype.slice.call(enum);
-}
 Function.prototype.curry = function() {
     if (arguments.length<1) {
         return this; //nothing to curry with - return function

@@ -107,11 +107,12 @@ exports.dAmnJS = function ( username, password, etc ) {
 		headers['Content-Length'] = postdata.length;
 		var callback = function( response ) {
 			this.cookie = unescape( response.headers["set-cookie"] );
-			if ( this.cookie.indexOf( 'auth=__' ) == 0 ) {
+			if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
+				this.cookie = this.cookie.split( 'auth=__' )[1];
 				this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
 			} else {
 				this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie.replace( 'auth_secure', '' ).split( 'auth' )[1] )[1];
-				c.error(  );
+				c.error( 'Oh shit, deviantART changed the cookie!  Please report this in #Botdom.  Until a permanent fix is made, using Plan B.' );
 			}
 			this.events.emit( 'sys_authtoken', this.authtoken );
 			c.info( 'Got Authtoken!' );
@@ -126,6 +127,9 @@ exports.dAmnJS = function ( username, password, etc ) {
 	this.connect = function ( ) {
 		c.info( 'Connecting to dAmnServer.' );
 		this.socket = net.createConnection( this.server.chat.port, this.server.chat.host );
+		var onError = function( ){
+			c.error('Could not open connection with ' + this.server.chat.host + '.');
+		};
 		var onconnect = function(){
 			data  = 'dAmnClient ' + this.server.chat.version + "\n";
 			data += 'agent=' + this.agent + "\n";
@@ -135,13 +139,13 @@ exports.dAmnJS = function ( username, password, etc ) {
 			data += 'creator=nuckchorris0/peter.lejeck@gmail.com'+"\n\0";
 			this.socket.write( data );
 			this.events.emit( 'sys_connected', this );
+			this.socket.removeListener( 'error', onError );
 		};
+//		this.socket.setTimeout( 4*60*1000 );
 		this.socket.setEncoding( 'utf8' );
 		this.socket.on( 'data', this.sockRecv.bind(this) );
 		this.socket.on( 'connect', onconnect.bind(this) );
-		this.socket.on( 'error', (function( ){
-			c.error('Could not open connection with ' + this.server.chat.host + '.');
-		}).bind(this));
+		this.socket.on( 'error', onError );
 		this.socket.on( 'timeout', (function( ){
 			c.error('Socket timed out.');
 		}).bind(this));
