@@ -1,5 +1,5 @@
 var spawn = require('child_process').spawn;
-var Script = process.binding('evals').Script;
+var vm = require('vm');
 var http = require('http');
 var net = require('net');
 var fs = require('fs');
@@ -10,13 +10,6 @@ var c = require('./core/cli.js');
 var flog = require('./core/fileLog.js');
 
 var dAmnJS = require('./core/dAmnJS.js').dAmnJS;
-
-function isArray(obj) {
-   if (obj.constructor.toString().indexOf("Array") == -1)
-      return false;
-   else
-      return true;
-}
 
 path.existsSync = function( dir, isDir ) {
 	try {
@@ -46,8 +39,7 @@ var config = {
 			var data = fs.readFileSync( this.folder+"/" + db + ".json", "utf8" );
 			try {
 				return JSON.parse( data );
-			}
-			catch (e) {
+			} catch (e) {
 				if ( def !== false ) {
 					fs.writeFile("./"+this.folder+"/"+db+".json", def, "utf8");
 				}
@@ -68,36 +60,12 @@ var Users = {
 		def: 25,
 		users: {},
 		pcs: {
-			'owner': {
-				name:  'Owner',
-				order: 100,
-				users: {},
-			},
-			'co-owners': {
-				name:  'Co-Owners',
-				order: 99,
-				users: {},
-			},
-			'admins': {
-				name:  'Admins',
-				order: 75,
-				users: {},
-			},
-			'members': {
-				name:  'Members',
-				order: 50,
-				users: {},
-			},
-			'guests': {
-				name:  'Guests',
-				order: 25,
-				users: {},
-			},
-			'banned': {
-				name:  'Banned',
-				order: 0,
-				users: {},
-			},
+			'owner':		{ name:  'Owner',		order: 100,		users: {} },
+			'co-owners':	{ name:  'Co-Owners',	order: 99,		users: {} },
+			'admins': 		{ name:  'Admins',		order: 75,		users: {} },
+			'members':		{ name:  'Members',		order: 50,		users: {} },
+			'guests':		{ name:  'Guests',		order: 25,		users: {} },
+			'banned':		{ name:  'Banned',		order: 0,		users: {} },
 		},
 	},
 	load: function ( ) {
@@ -141,11 +109,6 @@ var Users = {
 		}
 	},
 	setUserPc: function ( user, pc ) {
-		console.log( user );
-		console.log( this.normalize(pc) );
-		console.log( this.normalize(pc) in this.settings.pcs );
-		console.log( this.getPriv( user ) );
-		console.log( this.getPriv( user ) < 100 );
 		if ( this.normalize(pc) in this.settings.pcs && this.getPriv( user ) < 100 ) {
 			this.resetUserPc( user );
 			this.settings.users[ user.toLowerCase() ] = { 'priv': this.getOrderOfPc( this.normalize( pc ) ), 'overrides': {} };
@@ -170,11 +133,7 @@ var Users = {
 			if ( this.settings.pcs[ key ].order == order ) found = true;
 		}
 		if ( !( this.normalize( pc ) in this.settings.pcs ) && !found ) {
-			this.settings.pcs[ this.normalize( pc ) ] = {
-				name: pc,
-				order: order,
-				users: {},
-			};
+			this.settings.pcs[ this.normalize( pc ) ] = { name: pc, order: order, users: {} };
 			return true;
 		} else {
 			return false;
@@ -221,22 +180,18 @@ var Users = {
 
 var bds_events = new EventEmitter();
 var BDS = function ( namespace, category, command ) {
+	this.module = BDS.caller.arguments[0];
 	this.namespace = namespace;
 	this.category = category;
 	this.command = command;
 	this.bind = function ( func ) {
 		this.func = func;
 		fn = (function( from, namespace, category, command, payload ) {
-			this.func.call( {	'c': c,
-								'process': process,
-								'dAmn': dAmn,
-								'Bot': Bot,
-								'Command': Command,
-								'config': config,
-								'Event': Event,
-								'Modules': Modules,
-								'Users': Users,
-							}, from, payload, command, category, namespace );
+			try {
+				this.func.call( { 'c': c, 'process': process, 'dAmn': dAmn, 'Bot': Bot, 'Command': Command, 'config': config, 'Event': Event, 'Modules': Modules, 'Users': Users }, from, payload, command, category, namespace );
+			} catch (e) {
+				throw 'Error in BDS command. [' + this.namespace + ':' + this.category + ':' + this.command + '@' + this.module.name + ']\n' + e;
+			}
 		}).bind(this);
 		bds_events.on( this.namespace + '.' + this.category + '.' + this.command, fn );
 	};
@@ -264,33 +219,23 @@ var Command = function ( name, priv ) {
 				if ( args[1] !== undefined && ( args[1] == '?' || args[1].toLowerCase() == 'help' ) ) {
 					dAmn.say( chat, this.help_msg.replace( '{from}', from ).replace( '{trig}', Bot.trigger ) );
 				} else {
-					// Command events recieve the following 5 arguments: chat, from, message, args, argsE
-					this.func.call( {	'c': c,
-										'process': process,
-										'dAmn': dAmn,
-										'Bot': Bot,
-										'Command': Command,
-										'config': config,
-										'Event': Event,
-										'Modules': Modules,
-										'Users': Users,
-										'info': {}
-									}, chat, from, msg, args, argsE );
+					try {
+						// Command events recieve the following 5 arguments: chat, from, message, args, argsE
+						this.func.call( { 'c': c, 'process': process, 'dAmn': dAmn, 'Bot': Bot, 'Command': Command, 'config': config, 'Event': Event, 'Modules': Modules, 'Users': Users, 'info': {} }, chat, from, msg, args, argsE );
+					} catch (e) {
+						throw 'Error in command. [' + this.name + '@' + this.module.name + ']\n' + e;
+					}
 				}
 			} else {
 				cmd_events.emit( 'nopriv', chat, from, this.name, this.priv, Users.getPriv( from ) );
 			}
 		}).bind(this);
-		if ( isArray( this.name ) == true ) {
+		if ( Array.isArray( this.name ) == true ) {
 			for ( var i = 0, l = this.name.length; i < l; i++ ) {
 				cmd_events.on( 'c_' + this.name[i], fn );
 			}
 		} else {
-			try {
-				cmd_events.on( 'c_' + this.name, fn );
-			} catch ( e ) {
-				c.error( e );
-			}
+			cmd_events.on( 'c_' + this.name, fn );
 		}
 	};
 	this.help = function ( txt ) {
@@ -312,18 +257,11 @@ var Event = function ( event, name, priv ) {
 		this.func = func;
 		fn = (function( chat, from ) {
 			if ( this.priv == false || Users.getPriv( from ) >= this.priv ) {
-				// Command events recieve the following 5 arguments: chat, from, message, args, argsE
-				this.func.apply( {	'c': c,
-									'process': process,
-									'dAmn': dAmn,
-									'Bot': Bot,
-									'Command': Command,
-									'config': config,
-									'Event': Event,
-									'Modules': Modules,
-									'Users': Users,
-									'info': {}
-								}, arguments );
+				try {
+					this.func.apply( { 'c': c, 'process': process, 'dAmn': dAmn, 'Bot': Bot, 'Command': Command, 'config': config, 'Event': Event, 'Modules': Modules, 'Users': Users, 'info': {} }, arguments );
+				} catch (e) {
+					throw 'Error in event binding. [' + this.event + '/' + this.name + '@' + this.module.name + ']\n' + e;
+				}
 			}
 		}).bind(this);
 		dAmn.events.on( this.event, fn );
@@ -340,35 +278,42 @@ var Modules = {
 		var modules = fs.readdirSync( this.dir );
 		c.info( 'Loading modules...' );
 		for ( var i in modules ) {
-			fs.readFile( this.dir + '/' + modules[i], 'utf8', (function( error, module ) {
-				var envir = {	'c': c,
-								'process': process,
-								'dAmn': dAmn,
-								'Bot': Bot,
-								'Command': Command,
-								'BDS': BDS,
-								'config': config,
-								'Event': Event,
-								'Modules': Modules,
-								'Users': Users,
-								'info': {},
-								'require': require,
-							};
-				var res = Script.runInNewContext( module, envir );
-				var headers = new Array();
-				headers.name = envir.info.name;
-				headers.version = envir.info.version;
-				headers.about = envir.info.about;
-				headers.status = envir.info.status;
-				headers.author = envir.info.author;
-				this.list[headers.name] = headers;
-				this.list[headers.name].code = module;
-				Bot.modules[headers.name] = {'cmds': [], 'events': []};
-				if ( headers.status == true ) {
-					c.info('Module [[@fg;dkcyan]]' + headers.name + '[[@fg;dkgreen]] Loaded!');
-					envir.init( headers );
-				}
-			}).bind(this));
+			var loadMod = function( i ) {
+				return function( error, module ) {
+					try {
+						var envir = {	'c': c,
+										'process': process,
+										'dAmn': dAmn,
+										'Bot': Bot,
+										'Command': Command,
+										'BDS': BDS,
+										'config': config,
+										'Event': Event,
+										'Modules': Modules,
+										'Users': Users,
+										'info': {},
+										'require': require,
+									};
+						var res = vm.runInNewContext( module, envir );
+						var headers = new Array();
+						headers.name = envir.info.name;
+						headers.version = envir.info.version;
+						headers.about = envir.info.about;
+						headers.status = envir.info.status;
+						headers.author = envir.info.author;
+						this.list[headers.name] = headers;
+						this.list[headers.name].code = module;
+						Bot.modules[headers.name] = {'cmds': [], 'events': []};
+						if ( headers.status == true ) {
+							c.info('Module [[@fg;dkcyan]]' + headers.name + '[[@fg;dkgreen]] Loaded!');
+							envir.init( headers );
+						}
+					} catch (e) {
+						c.error( 'Module [[@fg;red]]' + modules[i] + '[[@fg;dkred]] is broken!' );
+					}
+				};
+			};
+			fs.readFile( this.dir + '/' + modules[i], 'utf8', loadMod( i ).bind(this));
 		}
 	},
 };
@@ -452,8 +397,8 @@ var Jitters = function ( username, password, trigger, owner ) {
 	this.about = "Running <b><abbr title=\"{envir}\">{name} {version}</abbr></b><br /><sup>Owned by <b>:dev{owner}:</b> | Created by :dev{author}:</sup>";
 	this.info = {
 		name:		'Jitters',
-		version:	'1.0a',
-		status:		'alpha',
+		version:	'1.0b',
+		status:		'beta',
 		release:	'1.0',
 		author:		'nuckchorris0',
 	};

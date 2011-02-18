@@ -1,19 +1,9 @@
-var spawn = require('child_process').spawn;
-var Script = process.binding('evals').Script;
 var http = require('http');
+var https = require('https');
 var net = require('net');
-var fs = require('fs');
-var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 var utils = require('./utils.js');
 var c = require('./cli.js');
-
-function isArray(obj) {
-   if (obj.constructor.toString().indexOf("Array") == -1)
-      return false;
-   else
-      return true;
-}
 
 exports.dAmnJS = function ( username, password, etc ) {
 	this.username = username || '';
@@ -119,7 +109,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 		options.method	= 'POST';
 		options.headers	= headers;
 	
-		var request = require('https').request( options, function( response ) {
+		var request = https.request( options, function( response ) {
 			c.info( 'Got Cookie!' );
 			
 			var headers = {};
@@ -135,7 +125,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 			options.method	= 'GET';
 			options.headers	= headers;
 		
-			var req = require('http').request( options, function( resp ) {
+			var req = http.request( options, function( resp ) {
 				resp.setEncoding('utf8');
 				resp.on('data', function (chunk) {
 					if ( chunk.toString().indexOf( 'dAmn_Login(' ) !== -1 ) {
@@ -197,7 +187,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 	};
 	this.deformChat = function (chat, discard) {
 		if ( chat ) {
-			if ( isArray( chat ) ) {
+			if ( Array.isArray( chat ) ) {
 				var out = [];
 				for ( var i = 0, l = chat.length; i < l; i++ ) {
 					out.push( arguments.callee( chat[i], discard ) );
@@ -234,7 +224,7 @@ exports.dAmnJS = function ( username, password, etc ) {
 	};
 	this.formatChat = function ( chat, me ) {
 		if ( chat ) {
-			if ( isArray( chat ) ) {
+			if ( Array.isArray( chat ) ) {
 				var out = [];
 				for ( var i = 0, l = chat.length; i < l; i++ ) {
 					out.push( arguments.callee( chat[i], me ) );
