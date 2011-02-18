@@ -21,16 +21,22 @@ exports.dAmnJS = function ( username, password, etc ) {
 	this.authtoken = etc.authtoken || null;
 	this.version = 0.2;
 	this.server = {
-		chat: {
-			host: 'chat.deviantart.com',
-			version: '0.3',
-			port: 3900
-		},
 		login: {
 			transport: 'https://',
 			host: 'www.deviantart.com',
 			file: '/users/login',
 			port: 443
+		},
+		auth: {
+			transport: 'http://',
+			host: 'chat.deviantart.com',
+			file: '/chat/botdom',
+			port: 80
+		},
+		chat: {
+			host: 'chat.deviantart.com',
+			version: '0.3',
+			port: 3900
 		}
 	};
 	this.client = 'dAmnJS';
@@ -105,41 +111,45 @@ exports.dAmnJS = function ( username, password, etc ) {
 		headers['Cookie'] = "skipintro=1";
 		headers['Content-Type'] = "application/x-www-form-urlencoded";
 		headers['Content-Length'] = postdata.length;
-		if ( process.version == 'v0.3.1' ) {
-			var login = http.createClient( this.server.login.port, this.server.login.host, true );
-			var request = login.request('POST', this.server.login.file, headers);
-			request.write(postdata);
-			request.end();
-			request.on('response', (function( response ) {
-				this.cookie = unescape( response.headers["set-cookie"] );
-				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
-					this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
-				} else {
-					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
-				}
-				this.events.emit( 'sys_authtoken', this.authtoken );
-				c.info( 'Got Authtoken!' );
-			}).bind(this));
-		} else {
-			var options = ({});
-			options.port	= this.server.login.port;
-			options.host	= this.server.login.host;
-			options.method	= 'POST';
+		
+		var options = ({});
+		options.port	= this.server.login.port;
+		options.host	= this.server.login.host;
+		options.path    = this.server.login.file;
+		options.method	= 'POST';
+		options.headers	= headers;
+	
+		var request = require('https').request( options, function( response ) {
+			c.info( 'Got Cookie!' );
+			
+			var headers = {};
+			headers['Host'] = this.server.auth.host;
+			headers['User-Agent'] = this.agent;
+			headers['Accept'] = "text/html";
+			headers['Cookie'] = response.headers["set-cookie"].join(';');
+			
+			var options = {};
+			options.port	= this.server.auth.port;
+			options.host	= this.server.auth.host;
+			options.path    = this.server.auth.file;
+			options.method	= 'GET';
 			options.headers	= headers;
 		
-			var request = require('https').request( options, (function( response ) {
-				this.cookie = unescape( response.headers["set-cookie"] );
-				if ( this.cookie.indexOf( 'auth=__' ) !== -1 ) {
-					this.authtoken = this.cookie.slice( this.cookie.indexOf( ';' )+2, this.cookie.indexOf( ';' )+34 );
-				} else {
-					this.authtoken = /"([a-f0-9]{32})"/.exec( this.cookie )[1];
-				}
-				this.events.emit( 'sys_authtoken', this.authtoken );
-				c.info( 'Got Authtoken!' );
-			}).bind(this) );
-			request.write(postdata);
-			request.end();
-		}
+			var req = require('http').request( options, function( resp ) {
+				resp.setEncoding('utf8');
+				resp.on('data', function (chunk) {
+					if ( chunk.toString().indexOf( 'dAmn_Login(' ) !== -1 ) {
+						this.authtoken = /dAmn_Login\(\s*\".*\",\s*\"([a-f0-9]{32})\"\s*\)/.exec( chunk.toString() )[1];
+						this.events.emit( 'sys_authtoken', this.authtoken );
+						c.info( 'Got Authtoken!' );
+						req.abort();
+					}
+				}.bind(this) );
+			}.bind(this) );
+			req.end();
+		}.bind(this) );
+		request.write(postdata);
+		request.end();
 		return this;
 	};
 	this.connect = function ( ) {

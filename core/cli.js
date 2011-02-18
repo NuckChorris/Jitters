@@ -1,8 +1,6 @@
 var sys = require("sys");
+var tty = require("tty");
 
-if ( process.version !== 'v0.3.1' ) {
-	var tty = require("tty");
-}
 module.exports = {
 	reset: '\x1B[0m',
 	fx: {
@@ -54,27 +52,10 @@ module.exports = {
 		return '\033['+x+';'+y+'H';
 	},
 	width: function() {
-		if ( process.version == 'v0.3.1' ) {
-			return Number( process.binding('stdio').getColumns() );
- 		} else {
-			return Number( tty.getWindowSize(1)[0] );
-		}
-	},
-	scrollback: {
-		_scrollback: [],
-		get: function(  ) {
-			
-		},
-		add: function( ) {
-		
-		},
+		return Number( tty.getWindowSize(1)[1] );
 	},
 	height: function() {
-		if ( process.version == 'v0.3.1' ) {
-			return Number( process.binding('stdio').getRows() );
- 		} else {
-			return Number( tty.getWindowSize(1)[1] );
-		}
+		return Number( tty.getWindowSize(1)[0] );
 	},
 	move: function(x,y) {
 		sys.print('\033['+x+';'+y+'H');
