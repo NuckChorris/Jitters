@@ -145,6 +145,9 @@ exports.dAmnJS = function ( username, password, etc ) {
 	this.connect = function ( ) {
 		c.info( 'Connecting to dAmnServer.' );
 		this.socket = net.createConnection( this.server.chat.port, this.server.chat.host );
+		var onError = function( ){
+			c.error('Could not open connection with ' + this.server.chat.host + '.');
+		};
 		var onconnect = function(){
 			data  = 'dAmnClient ' + this.server.chat.version + "\n";
 			data += 'agent=' + this.agent + "\n";
@@ -154,13 +157,13 @@ exports.dAmnJS = function ( username, password, etc ) {
 			data += 'creator=nuckchorris0/peter.lejeck@gmail.com'+"\n\0";
 			this.socket.write( data );
 			this.events.emit( 'sys_connected', this );
+			this.socket.removeListener( 'error', onError );
 		};
+//		this.socket.setTimeout( 4*60*1000 );
 		this.socket.setEncoding( 'utf8' );
 		this.socket.on( 'data', this.sockRecv.bind(this) );
 		this.socket.on( 'connect', onconnect.bind(this) );
-		this.socket.on( 'error', (function( ){
-			c.error('Could not open connection with ' + this.server.chat.host + '.');
-		}).bind(this));
+		this.socket.on( 'error', onError );
 		this.socket.on( 'timeout', (function( ){
 			c.error('Socket timed out.');
 		}).bind(this));
